@@ -32,10 +32,11 @@ under Proton on Linux, the launcher's included.
 
 ## All games
 
-### Sound not checked
+### Sound barely checked
 
-The test runs have sound output turned off. Music, effects and voices have not been checked
-in any game.
+The scripted test runs have sound output turned off. One hand play of *Tools of Destruction* with sound
+(2026-11-13) heard the sound stutter or play twice while moving through the first menus. Music, effects and voices
+have not been checked otherwise.
 
 ### No in-game settings menu yet
 
@@ -60,7 +61,9 @@ at about 37 frames per second in Fastoon (2026-10-22).
 ### Stalls at level loads
 
 The first time a level loads, it stops while graphics pipelines are built. Metropolis's
-first frame came after 12.6 and 15.8 s in two scripted runs with an empty shader cache (2026-11-12). The game's own
+first frame came after about 24 s in a scripted run with an empty shader cache (2026-11-14), while 181 pipelines were
+built one after another. With the pipeline look-ahead on (`LD_PSO_AHEAD=1`, which hangs the pause menu) it came after
+12.6 and 15.8 s in two runs (2026-11-12). The game's own
 graphics-stall notice can show during them. Shorter pauses follow after the level starts. Three scripted runs of an
 earlier build (2026-11-11) had three each: eight of them 3.2 to 3.7 s and one 8.4 s. A second start with the cache
 of the first is much shorter (1.3 s in one run).
@@ -84,6 +87,17 @@ same way on the console (not proven). Neither stops the game.
 
 The picture flickers inside one cave on Fastoon.
 
+### Pipeline look-ahead hangs the pause menu
+
+With `LD_PSO_AHEAD=1` the game hangs when the pause menu opens (four of four scripted runs, 2026-11-13). The
+look-ahead is off by default since this release, so the pause menu works (see [CHANGELOG.md](../CHANGELOG.md)).
+Switch it on only to test it.
+
+### Smoke drawn as dark patches
+
+In hand play (2026-11-13 and 2026-11-14) smoke near Ratchet in Metropolis is drawn as flat, dark brown patches with
+hard edges. Fire looks right.
+
 ### Pause menu quit entries
 
 The quit entries of the pause menu are off unless `RC_PAUSE_QUIT=1`. They are drawn
@@ -93,3 +107,9 @@ below the menu's box, and QUIT TO MAIN MENU loads the last save again.
 
 None of the other games is playable yet. Each one's furthest point and where it stops are in the README's status
 table and in [CHANGELOG.md](../CHANGELOG.md).
+
+### *All 4 One*: the characters fall through the floor
+
+In hand play of a development build (2026-11-14) the characters fell through the floor of Luminopolis's first arena
+as soon as they landed. The run's log shows the game's own job system on the SPU co-processors stopping soon after
+start-up; the collision is believed to run there (not proven). A fix is in development; it is not in this release.

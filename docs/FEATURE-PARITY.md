@@ -26,7 +26,7 @@ the part of the run the row names.
 | Ratchet & Clank Future: Tools of Destruction | BCUS98127 | plays by hand from the first level; scripted, a new game from an empty install and about 11 minutes in Metropolis; not played through | 48 % | 2026-11-10, scripted; levels started directly 2026-11-13, scripted, no input; hand play 2026-11-03 (keyboard) and October 2026 (earlier build) |
 | Ratchet & Clank Future: Quest for Booty | BCES00301 | installs its data; a new game reaches the ship deck, with Ratchet under scripted control | 33 % | 2026-11-10, scripted |
 | Ratchet & Clank Future: A Crack in Time | BCUS98124, 1.20 update | a new game reaches its first level and plays its opening cutscenes; player control not confirmed | 23 % | 2026-11-10, scripted |
-| Ratchet & Clank: All 4 One | BCUS98175, 1.03 update | the menus reach the first level, then the game stops | 23 % | 2026-11-10, scripted |
+| Ratchet & Clank: All 4 One | BCUS98175, 1.03 update | the first level in colour by hand; the characters fall through the floor | 35 % | 2026-11-14, hand play |
 | Ratchet & Clank: Full Frontal Assault | BCUS98380, 1.05 update | installs its data; the screen stays black | 8 % | 2026-11-04, scripted |
 | Ratchet & Clank: Into the Nexus | BCUS99245, 1.01 update | installs its data and shows its intro movie; then the lobby stays black | 11 % | 2026-11-10, scripted |
 | Ratchet: Deadlocked HD | NPUA80646 | builds; a scripted new game plays its intro, then stops before the first level | not estimated | 2026-11-10, scripted |
@@ -80,7 +80,7 @@ crash. 18 rows: 1 works, 10 partial, 7 not reached or not tried. **Estimate: 33 
 | Start-up and front end | start-up screens, then the front end | partial | the front end is shown |
 | Game-data install | the first start installs the game data | works | about 4 GB installed in a scripted run on 2026-11-10, then the game goes on |
 | Main menu | new game, load, options | partial | NEW GAME starts the game; the other entries were not tried |
-| Options menu | controls, display and sound | not tried | |
+| Options menu | controls, display and sound | partial | the video, audio and game options pages open (hand play) |
 | Pad input in menus | D-pad and buttons navigate | partial | scripted button presses only |
 | Pause menu | pause menu and its pages | not reached yet | |
 | Saving | the game saves to the HDD | partial | NEW GAME writes its save |
@@ -149,25 +149,26 @@ screen. The main menu is not reached yet. 14 rows: 3 partial, 11 not reached or 
 
 1.03 update. The game builds and starts. In scripted runs on 2026-11-10 it installs its data, plays the install
 movie and reaches the title screen; the script goes through the main menu, the game options and the character select
-and launches the first level, Luminopolis. The level's intro is shown, then the HUD over a white 3D view, and after
-about 100 seconds the game stops drawing. Not playable. 13 rows: 6 partial, 6 not reached or not tried, 1 missing.
-**Estimate: 23 %.**
+and launches the first level, Luminopolis. In hand play of a development build with the one-dimensional texture fix
+(2026-11-14, with sound) the menus, a save and the first level's intro cinematics work and the level is drawn in
+colour; at the first fight the characters fall through the floor. Not playable. 13 rows: 9 partial, 3 not reached or
+not tried, 1 missing. **Estimate: 35 %.**
 
 | Feature | On the console | Port | Notes |
 |---|---|---|---|
 | Start-up and title screen | start-up screens, then the title screen | partial | the install notice, the install movie and the title screen are shown |
 | Main menu | play, options, extras | partial | the offline game options, the character select and the level launch work with scripted presses |
 | Options menu | controls, display and sound | not tried | |
-| Input | pad in menus and in play | partial | scripted presses work in the menus; in the level the game stops before it reads them |
+| Input | pad in menus and in play | partial | scripted presses work in the menus; hand play goes through the menus and into the first level |
 | Local co-op | up to four players on one console | not reached yet | |
-| Saving and loading | save and load | not reached yet | |
-| Cutscenes | story scenes | partial | the first level's intro is shown |
-| Levels | the campaign's levels | missing | Luminopolis is reached, but its 3D view is white and the game stops after about 100 seconds |
+| Saving and loading | save and load | partial | the game writes its first save (hand play); loading not tried |
+| Cutscenes | story scenes | partial | the first level's intro cinematics play (hand play) |
+| Levels | the campaign's levels | partial | Luminopolis is reached and drawn (hand play); the characters fall through the floor at the first fight |
 | Weapons and upgrades | weapons and their upgrades | not reached yet | |
-| Combat | enemies and bosses | not reached yet | |
+| Combat | enemies and bosses | missing | the first fight starts, but the characters fall through the floor (hand play) |
 | Audio | music, effects and voices | not tried | test runs have sound turned off |
-| Picture | 720p, full scenes | partial | the menus and the level intro are drawn; the level's 3D view is white |
-| Frame rate | the console's own frame rate | partial | scripted, 2026-11-04: 12.6 per second on the title screen; scripted, 2026-11-10: 23.3 in the menus, about 8 in the level before it stops |
+| Picture | 720p, full scenes | partial | the menus, the cinematics and the first level are drawn in colour (hand play); not compared with the console |
+| Frame rate | the console's own frame rate | partial | scripted, 2026-11-10: 23.3 per second in the menus; hand play, 2026-11-14: about 28 to 30 in the menus, 15 to 18 in the first level, one 17-second stop while pipelines were built |
 
 ## Ratchet & Clank: Full Frontal Assault
 

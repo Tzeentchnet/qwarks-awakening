@@ -9,6 +9,7 @@ port/rc/tests/run_dyn_bias_test.sh
 port/rc/tests/run_fifo_ahead_test.sh
 port/rc/tests/run_gamma_alpha_test.sh
 port/rc/tests/run_hdd0_overlay_test.sh
+port/rc/tests/run_tex_1d_test.sh
 port/rc/tests/run_igjob_rejoin_test.sh
 port/rc/tests/run_inline_divider_test.sh
 port/rc/tests/run_kz3_display_tests.sh
@@ -18,6 +19,7 @@ port/rc/tests/run_pso_keys_rec_test.sh
 port/rc/tests/run_pso_prio_test.sh
 port/rc/tests/run_rc_display_test.sh
 port/rc/tests/run_rc_modal_tick_test.sh
+port/rc/tests/run_rc_cursor_art_test.sh
 port/rc/tests/run_rc_mouse_test.sh
 port/rc/tests/run_rc_settings_test.sh
 port/rc/tests/run_spurs_pm_interp_test.sh

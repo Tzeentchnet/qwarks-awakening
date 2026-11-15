@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "port_version": "0.3.0",
+ "port_version": "0.3.1",
  "note": "Numbers, ids and versions only. Known executables: see eboots_format.",
  "games": [
   {
@@ -237,10 +237,10 @@
    "title": "Ratchet & Clank: All 4 One",
    "year": 2011,
    "order": 4,
-   "readme_state": "builds (1.03 update); scripted menus reach the first level, then the game stops; not playable",
+   "readme_state": "builds (1.03 update); reaches its first fight in colour, then the characters fall through the floor; not playable",
    "playability": "boots",
-   "playability_checked": "2026-11-10",
-   "playability_note": "reaches its first level; the view is white",
+   "playability_checked": "2026-11-14",
+   "playability_note": "reaches its first level in colour; the characters fall through the floor (hand play)",
    "badge_name": "A4O",
    "supported": false,
    "builds": true,

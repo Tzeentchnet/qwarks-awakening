@@ -29,7 +29,7 @@
 *Qwark's Awakening* is a fan project's name, after a character from the series. It is not official and not
 affiliated with or endorsed by Sony Interactive Entertainment or Insomniac Games.
 
-**Status: early work, not playable yet.** Version <!-- version -->0.3.0<!-- /version -->. The launcher builds the
+**Status: early work, not playable yet.** Version <!-- version -->0.3.1<!-- /version -->. The launcher builds the
 games on your PC from your own copy. Every test so far ran the Windows programs under Proton on Linux; nothing was
 tested on Windows itself. An earlier build of the first target, *Tools of Destruction*, was played by hand from its first level, with known bugs. Nobody
 has played it through. How far each other game gets in scripted runs is in the [status table](#status). No game is
@@ -40,7 +40,7 @@ online yet ([ONLINE.md](docs/ONLINE.md)).
 <!-- badges:start -->
 [![ToD: in game](assets/badges/tods.svg)](docs/FEATURE-PARITY.md#ratchet--clank-future-tools-of-destruction) [![QfB: in game](assets/badges/qfb.svg)](docs/FEATURE-PARITY.md#ratchet--clank-future-quest-for-booty) [![ACiT: boots](assets/badges/acit.svg)](docs/FEATURE-PARITY.md#ratchet--clank-future-a-crack-in-time) [![A4O: boots](assets/badges/a4o.svg)](docs/FEATURE-PARITY.md#ratchet--clank-all-4-one) [![FFA: boots](assets/badges/ffa.svg)](docs/FEATURE-PARITY.md#ratchet--clank-full-frontal-assault) [![Nexus: boots](assets/badges/nexus.svg)](docs/FEATURE-PARITY.md#ratchet--clank-into-the-nexus) [![R&C 1: in game](assets/badges/rc1.svg)](docs/FEATURE-PARITY.md#ratchet--clank-collection-ratchet--clank-1-2-and-3) [![R&C 2: in game](assets/badges/rc2.svg)](docs/FEATURE-PARITY.md#ratchet--clank-collection-ratchet--clank-1-2-and-3) [![R&C 3: in game](assets/badges/rc3.svg)](docs/FEATURE-PARITY.md#ratchet--clank-collection-ratchet--clank-1-2-and-3) [![Deadlocked HD: menus](assets/badges/dlhd.svg)](docs/FEATURE-PARITY.md#ratchet-deadlocked-hd)
 
-*Each state is a measured run (last checked 2026-11-10, the Windows programs under Proton on Linux). "In game" means reached with scripted input, not played through by hand. The six states are defined in [RELEASE-CRITERIA.md](docs/RELEASE-CRITERIA.md).*
+*Each state is a measured run (last checked 2026-11-14, the Windows programs under Proton on Linux). "In game" means reached with scripted input, not played through by hand. The six states are defined in [RELEASE-CRITERIA.md](docs/RELEASE-CRITERIA.md).*
 <!-- badges:end -->
 
 </div>
@@ -68,7 +68,7 @@ compiler come with it; nothing else needs to be installed.
 | **Windows** | Windows 10 or 11, 64-bit | Not tested on Windows itself; tested under Proton on Linux |
 | **GPU** | Direct3D 12 | Tested only on an NVIDIA GeForce RTX 4060 |
 | **CPU and memory** | x86-64; 16 GB of memory to build | Tested only on an Intel Core i7-12700KF |
-| **Disk** | The install, plus several GB for each game you build | The download is about 160 MB; the space a build needs is not measured yet |
+| **Disk** | The install, plus several GB for each game you build | The setup download is about 100 MB; the space a build needs is not measured yet |
 
 | Game | Title IDs the launcher knows (region) | Update |
 |---|---|---|
@@ -163,7 +163,7 @@ Not reached yet: a chapter played to its end, and the port's own save loaded aga
 | Ratchet & Clank Future: Tools of Destruction | 2007 | first target: played by hand from its first level; a scripted new game from an empty install plays about 11 minutes in Metropolis without a crash; not playable through yet |
 | Ratchet & Clank Future: Quest for Booty | 2008 | builds; a scripted new game from a fresh install reaches the ship deck, with about 90 seconds of scripted play without errors (one run); not playable |
 | Ratchet & Clank Future: A Crack in Time | 2009 | builds (1.20 update); a scripted new game reaches its first level (great_clock_a) and plays its opening cutscenes, in 4 of 4 runs; player control there is not confirmed; not playable |
-| Ratchet & Clank: All 4 One | 2011 | builds (1.03 update); scripted menus reach the first level, then the game stops; not playable |
+| Ratchet & Clank: All 4 One | 2011 | builds (1.03 update); reaches its first fight in colour, then the characters fall through the floor; not playable |
 | Ratchet & Clank: Full Frontal Assault | 2012 | builds and installs its data (1.05 update); the screen stays black; not playable |
 | Ratchet & Clank: Into the Nexus | 2013 | builds (1.01 update); installs its data and shows its intro movie, then the lobby stays black; not playable |
 | Ratchet & Clank Collection: Ratchet & Clank 1, 2 and 3 (PS2 remasters) | 2012 | each game builds into its own program; a scripted new game reaches its first level with the player under scripted control; not playable |

@@ -45,11 +45,12 @@ int main(void)
           "dt range ends included");
 
     /* stage 3: in play while a camera update ran in the last 300 ms */
-    CHECK(!rc_mouse_in_play(5000, 0), "never updated: not in play");
-    CHECK(rc_mouse_in_play(5000, 5000), "updated now: in play");
-    CHECK(rc_mouse_in_play(5300, 5000), "300 ms ago: in play");
-    CHECK(!rc_mouse_in_play(5301, 5000), "301 ms ago: menu");
-    CHECK(rc_mouse_in_play(4990, 5000), "stamp a little ahead of the reader's clock: in play");
+    CHECK(!rc_mouse_in_play(5000, 0, 0), "never updated: not in play");
+    CHECK(rc_mouse_in_play(5000, 5000, 1), "updated this frame: in play");
+    CHECK(rc_mouse_in_play(5018, 5000, 1), "18 frames ago: in play");
+    CHECK(!rc_mouse_in_play(5019, 5000, 1), "19 frames ago: menu");
+    CHECK(rc_mouse_in_play(5001, 5000, 1), "a long hitch presents no frame: still in play (2026-11-13 hand play)");
+    CHECK(rc_mouse_in_play(3u, 0xFFFFFFF8u, 1), "frame counter wrap: 11 frames apart, in play");
 
     /* pitch: mouse forward (dy < 0) = look up; RC_MOUSE_PITCH_SIGN maps it onto the target's elevation */
     const float S = RC_MOUSE_PITCH_SIGN;

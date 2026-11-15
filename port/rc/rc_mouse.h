@@ -12,17 +12,19 @@
 
 #include <math.h>
 
-#define RC_MOUSE_PLAY_MS 300u   /* KZ2 6046's rule: a camera update took counts within this long = in play */
+#define RC_MOUSE_PLAY_FLIPS 18u /* a camera update within this many presented frames = in play (300 ms at 60 fps) */
 #define RC_MOUSE_DT_MIN  0.0005f /* frame times outside [0.5 ms, 0.5 s] are not a running camera: no mouse rate */
 #define RC_MOUSE_DT_MAX  0.5f
 
-/* In play (pointer hidden and held) while a camera update ran within the last RC_MOUSE_PLAY_MS. last_ms 0 = never.
- * now earlier than last (two threads' clock reads) counts as in play. */
-static inline int rc_mouse_in_play(unsigned long long now_ms, unsigned long long last_ms)
+/* In play (pointer hidden and held) while a camera update ran within the last RC_MOUSE_PLAY_FLIPS presented frames.
+ * Counted on the frame clock, not wall time (2026-11-13 hand play): KZ2 6046's 300 ms wall rule turned every frame hitch
+ * longer than 300 ms (PSO builds, 1-13 fps after a level load) into "menu", so the pointer showed, the mouse was let go
+ * and it flipped back within a second, over and over. A hitch presents no frame, so the state now holds through it.
+ * stamped 0 = no camera update yet. Unsigned difference: the counters may wrap. */
+static inline int rc_mouse_in_play(unsigned now_flip, unsigned last_flip, int stamped)
 {
-    if (!last_ms) return 0;
-    if (now_ms <= last_ms) return 1;
-    return now_ms - last_ms <= RC_MOUSE_PLAY_MS;
+    if (!stamped) return 0;
+    return (unsigned)(now_flip - last_flip) <= RC_MOUSE_PLAY_FLIPS;
 }
 
 /* Extra yaw rate (rad/s) for dx counts this frame: dx * rad_per_count / dt. ASSUMPTION (hand test): a positive rate

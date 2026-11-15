@@ -19,12 +19,13 @@ ld_pl_create when ld_pl_shutdown released the pipeline library and device (the 2
 ld_apso_quiesce now stops the workers taking jobs and waits for the running ones (builds and templates) before
 ld_pt_shutdown / ld_pl_shutdown, at most 10 s (the library is kept if one still runs). And the cap clamped one worker up
 to 1, so a template job could hold the only worker; it is 0 now and the prewarm keeps 2071's threads in that case.
+Rebased 2026-11-12 on KZ3 2166: the scout's queue release moved into 2166's ld_pt_queue_ready, which now hands the
+records to the async queue in queued mode (same code as before, one place for the image and the general pass).
 
 diff --git a/libs/video/rsx_live_draw.c b/libs/video/rsx_live_draw.c
-index cf80b49..352a7d4 100644
 --- a/libs/video/rsx_live_draw.c
 +++ b/libs/video/rsx_live_draw.c
-@@ -8828,7 +8828,7 @@ static void ld_pl_tick(void)
+@@ -8828,7 +8828,7 @@
          ld_pl_save_library(0);
  }
  
@@ -33,7 +34,7 @@ index cf80b49..352a7d4 100644
  {
      if (!g_ld_pl.started) return;
      for (u32 i = 0; i < g_ld_pl.n_threads; i++)
-@@ -8838,6 +8838,8 @@ static void ld_pl_shutdown(void)
+@@ -8838,6 +8838,8 @@
      ld_pl_drain();
      fprintf(stderr, "[pso-preload] used %u of the preloaded PSOs, %u duplicates of walker builds, walker library hits %u\n",
              g_ld_pl_used, g_ld_pl.n_dup, g_ld_pl.n_lib_hit_walker);
@@ -42,16 +43,16 @@ index cf80b49..352a7d4 100644
      if (g_ld_pl.lib) { g_ld_pl.lib->lpVtbl->Release(g_ld_pl.lib); g_ld_pl.lib = NULL; }
      if (g_ld_pl.dev1) { g_ld_pl.dev1->lpVtbl->Release(g_ld_pl.dev1); g_ld_pl.dev1 = NULL; }
      free(g_ld_pl.lib_blob); g_ld_pl.lib_blob = NULL;
-@@ -9123,6 +9125,8 @@ static struct {
+@@ -9123,6 +9125,8 @@
      LONGLONG t0, qpf;
      volatile LONG built, failed_xlate, failed_blob, failed_pso, failed_key, lib_hits, staged;
      volatile LONG used;                          /* walker lookups that found a template pipeline ready */
 +    int queued_mode;                             /* R&C patch 7061: jobs of the async PSO queue, lowest class */
 +    struct ld_pt_job* jobs;                      /* R&C patch 7061: one queue node per record */
      unsigned passes; unsigned long long scan_us, xlate_us, compile_us, create_us;
- } g_pt;
- 
-@@ -9309,6 +9313,24 @@ static void ld_pt_build(u32 ri, char* vs_hlsl, char* ps_hlsl, rsx_fp_constant_bl
+     /* patch 2166: loaded-image ranges (guest vaddr begin/end), the one-off step-8 image pass, and which guest address
+      * (mod 16) and which pass each found program came from (diagnostic for the "does the general pass need step 8 for
+@@ -9316,6 +9320,24 @@
      InterlockedIncrement(&g_pt.staged);
  }
  
@@ -76,23 +77,23 @@ index cf80b49..352a7d4 100644
  static DWORD WINAPI ld_pt_worker(LPVOID arg)
  {
      (void)arg;
-@@ -9410,7 +9432,14 @@ static DWORD WINAPI ld_pt_scout(LPVOID arg)
-             g_pt.q[g_pt.q_tail++] = i; newq++; queued++;
-         }
-         LeaveCriticalSection(&g_pt.cs);
--        if (newq) ReleaseSemaphore(g_pt.sem, (LONG)newq, NULL);
-+        if (newq && g_pt.queued_mode) {   /* R&C patch 7061: into the async queue, after every build */
-+            ld_pt_job* batch[64]; u32 nb = 0;
-+            while (g_pt.q_head != g_pt.q_tail) {
-+                batch[nb++] = &g_pt.jobs[g_pt.q[g_pt.q_head++]];
-+                if (nb == 64u) { ld_apso_queue_templates(batch, nb); nb = 0; }
-+            }
-+            if (nb) ld_apso_queue_templates(batch, nb);
-+        } else if (newq) ReleaseSemaphore(g_pt.sem, (LONG)newq, NULL);
-         if (g_pt.passes <= 3 || g_pt.vp_found != last_vp || g_pt.fp_found != last_fp)
-             fprintf(stderr, "[pso-template] scan %u at %.1f s: %.0f MB in %.0f ms; programs found vp %u/%u fp %u/%u; "
-                             "%u/%u pipelines queued (+%u)\n",
-@@ -9505,9 +9534,23 @@ static void ld_pt_start(void)
+@@ -9455,7 +9477,14 @@
+         g_pt.q[g_pt.q_tail++] = i; newq++; (*queued)++;
+     }
+     LeaveCriticalSection(&g_pt.cs);
+-    if (newq) ReleaseSemaphore(g_pt.sem, (LONG)newq, NULL);
++    if (newq && g_pt.queued_mode) {   /* R&C patch 7061: into the async queue, after every build */
++        ld_pt_job* batch[64]; u32 nb = 0;
++        while (g_pt.q_head != g_pt.q_tail) {
++            batch[nb++] = &g_pt.jobs[g_pt.q[g_pt.q_head++]];
++            if (nb == 64u) { ld_apso_queue_templates(batch, nb); nb = 0; }
++        }
++        if (nb) ld_apso_queue_templates(batch, nb);
++    } else if (newq) ReleaseSemaphore(g_pt.sem, (LONG)newq, NULL);
+     return newq;
+ }
+ 
+@@ -9599,9 +9628,23 @@
      if (nt < 1) nt = 1;
      if (nt > 8) nt = 8;
      g_pt.in_on = 1;
@@ -119,7 +120,7 @@ index cf80b49..352a7d4 100644
          g_pt.workers[g_pt.n_workers] = CreateThread(NULL, 0, ld_pt_worker, NULL, 0, NULL);
          if (g_pt.workers[g_pt.n_workers]) g_pt.n_workers++;
      }
-@@ -9776,6 +9819,8 @@ static struct {
+@@ -9875,6 +9918,8 @@
      u64 submitted, finished, failed, compile_us, create_us, latency_us, max_latency_us, merged;
      u64 awaits, await_us, max_await_us;   /* RSX pass 57: walker waits for a pending build (no draw is skipped) */
      u32 max_in_flight;
@@ -128,7 +129,7 @@ index cf80b49..352a7d4 100644
  } g_apso;
  
  static int ld_apso_on(void)
-@@ -9837,19 +9882,81 @@ static void ld_apso_claim_locked(ld_apso_job* j)
+@@ -9936,19 +9981,81 @@
      if (j->ps_e && !j->ps_own) rsx_apq_claim(&g_apso.q, &j->qn, &j->ps_own, &j->ps_e->owner, &j->ps_e->owner_flag);
  }
  
@@ -212,7 +213,7 @@ index cf80b49..352a7d4 100644
          LARGE_INTEGER q0, q1, q2, f; QueryPerformanceFrequency(&f); QueryPerformanceCounter(&q0);
          /* Owned blobs first (always compiled and published, even when the other stage failed: dependents wait on
           * them), then the ones another job compiles (RSX pass 50: one in-flight compile per blob). */
-@@ -9872,35 +9979,35 @@ static DWORD WINAPI ld_apso_worker(LPVOID arg)
+@@ -9971,35 +10078,35 @@
          EnterCriticalSection(&g_apso.cs);
          j->next = g_apso.done; g_apso.done = j;
          InterlockedExchange(&g_apso.done_flag, 1);
@@ -267,7 +268,7 @@ index cf80b49..352a7d4 100644
      ld_apso_job* j = (ld_apso_job*)calloc(1, sizeof *j);
      if (!j) return 0;
      j->vs_len = (u32)strlen(vs_hlsl); j->ps_len = (u32)strlen(ps_hlsl);
-@@ -10064,7 +10171,7 @@ static ID3D12PipelineState* ld_apso_await(u32 idx)
+@@ -10163,7 +10270,7 @@
      if (ld_apso_prio_on() || ld_apso_await_log_on()) {   /* R&C patch 7052: the build the walker waits on runs next */
          EnterCriticalSection(&g_apso.cs);
          queued = g_apso.q.n_queued;
@@ -276,7 +277,7 @@ index cf80b49..352a7d4 100644
              if (((ld_apso_job*)n)->key == g.psos[idx].key) {
                  state = 'q';
                  if (ld_apso_prio_on() && rsx_apq_promote(&g_apso.q, n)) ld_apso_claim_locked((ld_apso_job*)n);
-@@ -20553,8 +20660,9 @@ void rsx_live_draw_shutdown(void)
+@@ -20652,8 +20759,9 @@
                  (unsigned long long)g_ld_shader_disk_writes[1],
                  (unsigned long long)g_ld_shader_disk_rejects);
      }
@@ -288,7 +289,6 @@ index cf80b49..352a7d4 100644
      shader_blob_cache_release(&g.vs_blobs);
      shader_blob_cache_release(&g.ps_blobs);
 diff --git a/libs/video/rsx_pso_prio.h b/libs/video/rsx_pso_prio.h
-index 78185c5..9a1268d 100644
 --- a/libs/video/rsx_pso_prio.h
 +++ b/libs/video/rsx_pso_prio.h
 @@ -20,12 +20,27 @@
@@ -319,7 +319,7 @@ index 78185c5..9a1268d 100644
  #define RSX_APQ_GAME_THREADS 8
  #define RSX_APQ_MIN_WORKERS 2
  #define RSX_APQ_MAX_WORKERS 8
-@@ -34,33 +49,63 @@ typedef struct rsx_apq_node {
+@@ -34,33 +49,63 @@
      struct rsx_apq_node* next;
      uint64_t prio;
      uint8_t queued;      /* 1 between insert and pop */
@@ -345,16 +345,16 @@ index 78185c5..9a1268d 100644
      n->prio = prio; n->next = *pp; *pp = n; n->queued = 1;
 -    q->n_queued++;
 +    if (n->cls == RSX_APQ_CLS_TEMPLATE) q->n_tmpl++; else q->n_queued++;
-+}
-+
+ }
+ 
+-/* The next job to run (NULL when empty). */
 +/* R&C patch 7061: queue a template prewarm job (lowest class). */
 +static inline void rsx_apq_insert_template(rsx_apq* q, rsx_apq_node* n)
 +{
 +    n->cls = RSX_APQ_CLS_TEMPLATE;
 +    rsx_apq_insert(q, n, RSX_APQ_TEMPLATE);
- }
- 
--/* The next job to run (NULL when empty). */
++}
++
 +/* The next job to run (NULL when empty, or when only template jobs are queued and tmpl_cap of them run). */
  static inline rsx_apq_node* rsx_apq_pop(rsx_apq* q)
  {
@@ -388,7 +388,7 @@ index 78185c5..9a1268d 100644
  /* 1 when a is queued strictly ahead of b (both queued). */
  static inline int rsx_apq_before(const rsx_apq* q, const rsx_apq_node* a, const rsx_apq_node* b)
  {
-@@ -75,7 +120,7 @@ static inline int rsx_apq_before(const rsx_apq* q, const rsx_apq_node* a, const
+@@ -75,7 +120,7 @@
   * on one build at a time). Returns 1 when it moved, 0 when it was not queued (running or done). */
  static inline int rsx_apq_promote(rsx_apq* q, rsx_apq_node* n)
  {

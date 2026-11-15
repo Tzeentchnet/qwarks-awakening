@@ -1,0 +1,97 @@
+rsx live draw: 1D textures (TEXTURE_FORMAT dimension 1) decode as width x 1 images with V clamped, instead of binding white.
+
+texture_size and decode_guest_texture accepted dimension 2 (and 3, patch 2011) only, so every 1D unit was bound to the
+white fallback. Into the Nexus' full-screen post pass (lobby, draw 15 of frame 3600, nx-7044dd inputs) samples two 512x1
+A8R8G8B8 tables in main memory (1:0xC1C600, 1:0xC1A600, format 0xA5) and wrote pure white over the scene (verified by
+nx-mwin2: the fogged lobby instead of white). RPCS3 creates a 1D texture for dimension 1 [src:rpcs3-rsx-graph]. The
+fragment program samples every 2D-path unit with .xy, so v is whatever the program left there: a height-1 texture
+returns row 0 for any finite v under wrap, mirror, clamp and mirror-once, but BORDER blends in the border colour. The
+RSX has no t coordinate for a 1D texture, so a 1D unit's V address mode is clamp to edge (decode_sampler and
+sampler_key). rsx_tex_1d.h holds both rules; host test port/rc/tests/run_tex_1d_test.sh compares a software 1D fetch
+against the Wx1 2D fetch for every u/v, both filters and all wrap codes (and shows the raw BORDER V differs).
+ASSUMPTION: a 1D texture with mips picks its level from u's derivative only; the Wx1 texture also sees v's (none of the
+seen 1D units has mips). R&C port patch 7045.
+
+--- a/libs/video/rsx_live_draw.c
++++ b/libs/video/rsx_live_draw.c
+@@ -2189,6 +2189,7 @@
+     return g_ld_caps.dev2->lpVtbl->CreatePipelineState(g_ld_caps.dev2, &sd, &IID_ID3D12PipelineState, (void**)out);
+ }
+ 
++#include "rsx_tex_1d.h"   /* R&C patch 7045 */
+ static D3D12_TEXTURE_ADDRESS_MODE gcm_wrap(u32 w)
+ {
+     switch (w & 0xF) {
+@@ -2230,7 +2231,7 @@
+         sd.MaxAnisotropy = 1;
+     }
+     sd.AddressU = gcm_wrap(t->wrap);
+-    sd.AddressV = gcm_wrap(t->wrap >> 8);
++    sd.AddressV = gcm_wrap(ld_tex_wrap_v(t->dimension, t->wrap >> 8));   /* R&C patch 7045: 1D = clamp */
+     sd.AddressW = gcm_wrap(t->wrap >> 16);
+     {
+         int32_t bias = (int32_t)(t->filter & 0x1FFFu);
+@@ -2255,7 +2256,8 @@
+ static void sampler_key(const rsx_dsp_texture* t, u32 key[4])
+ {
+     key[0] = t->filter & 0x07071FFFu;                  /* bias, min, mag */
+-    key[1] = t->wrap & 0x000F0F0Fu;                    /* wrap s/t/r */
++    key[1] = (t->wrap & 0x000F000Fu) |                 /* wrap s/r, and t as decode_sampler uses it (R&C 7045) */
++             (ld_tex_wrap_v(t->dimension, t->wrap >> 8) << 8);
+     key[2] = t->control0 & 0x7FFFFFF0u;                /* LOD range, aniso */
+     {
+         const u32 ws = key[1] & 0xF, wt = (key[1] >> 8) & 0xF, wr = (key[1] >> 16) & 0xF;
+@@ -3659,8 +3661,11 @@
+         const u32 pitch = (linear && t->pitch) ? t->pitch : t->width * texel_size;
+         return pitch * t->height * d;
+     }
+-    if (!t->width || !t->height || t->width > 4096 || t->height > 4096 ||
+-        t->dimension != 2)
++    /* R&C patch 7045: a 1D texture (dimension 1) is a width x 1 image; it was refused here and in the decoder and
++     * every such unit sampled white. Into the Nexus' full-screen post pass reads two 512x1 A8R8G8B8
++     * lookup tables from main memory. RPCS3 creates a 1D texture for it; a 2D texture of height 1 with V clamped
++     * (decode_sampler) samples the same texels for any v (rsx_tex_1d.h, host test run_tex_1d_test.sh). */
++    if (!t->width || !t->height || t->width > 4096 || t->height > 4096 || !ld_tex_2d_path(t->dimension))
+         return 0;
+     u32 n_mips = t->mipmaps ? t->mipmaps : 1;
+     if (n_mips > 14) n_mips = 14;
+@@ -4679,7 +4684,7 @@
+     g_ld_tex_raw = 0;
+     if (t->dimension == 3)
+         return decode_guest_texture_3d(t, remap, base_fmt, linear);
+-    if (!w || !h || w > 4096 || h > 4096 || t->dimension != 2)
++    if (!w || !h || w > 4096 || h > 4096 || !ld_tex_2d_path(t->dimension))   /* 1D: R&C patch 7045 */
+         return NULL;
+     u32 n_mips = t->mipmaps ? t->mipmaps : 1;
+     if (n_mips > 14) n_mips = 14;
+--- /dev/null
++++ b/libs/video/rsx_tex_1d.h
+@@ -0,0 +1,28 @@
++/* R&C patch 7045: 1D textures (SET_TEXTURE_FORMAT dimension 1) as width x 1 2D textures.
++ *
++ * Live draw decodes a 1D texture through the 2D path as a width x 1 image. The fragment program samples it with the
++ * register's .xy (rsx_fp_decompiler emits the same Sample call for every 2D-path unit), so v is whatever the program
++ * left in the second component. A height-1 texture returns row 0 for any finite v under WRAP, MIRROR, CLAMP and
++ * MIRROR_ONCE, but BORDER blends in the border colour (linear filter: whenever v != 0.5; point: outside [0, 1)). The
++ * RSX has no t coordinate for a 1D texture [src:rpcs3-rsx-graph: RPCS3 creates a real 1D texture], so the V address
++ * mode of a 1D unit is forced to clamp-to-edge, under which every v reads row 0 exactly like a 1D fetch.
++ * Host test: port/rc/tests/run_tex_1d_test.sh (a software sampler compares a 1D fetch against the Wx1 2D fetch). */
++#ifndef RSX_TEX_1D_H
++#define RSX_TEX_1D_H
++
++#include <stdint.h>
++
++/* The texture dimensions the 2D decode path takes: 2, and 1 as a width x 1 image. */
++static inline int ld_tex_2d_path(uint32_t dimension)
++{
++    return dimension == 2u || dimension == 1u;
++}
++
++/* The GCM wrap code (TEXTURE_ADDRESS [11:8], 1 wrap .. 8 mirror-once) used for the V axis of a unit: a 1D unit gets
++ * 3 = clamp to edge whatever the guest wrote there. */
++static inline uint32_t ld_tex_wrap_v(uint32_t dimension, uint32_t gcm_wrap_v)
++{
++    return dimension == 1u ? 3u : (gcm_wrap_v & 0xFu);
++}
++
++#endif

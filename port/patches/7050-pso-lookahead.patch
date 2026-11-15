@@ -12,6 +12,8 @@ the FP constants are restored afterwards. A wrong guess only builds an unused pi
 (pso_keys.bin, ld_pl_record; the template export, ld_pt_note) only once a real draw takes it. One scan covers the draws up to
 its first draw on another surface (its horizon); a miss before the horizon waits as before, so the same commands are
 not read twice. LD_PSO_AHEAD=0 = old.
+2026-11-14 (0.3.1): OFF BY DEFAULT, LD_PSO_AHEAD=1 turns it on. With it on, ToD hangs when the pause menu opens (scripted
+repro 4/4; off: 2/2 open and close, and a hand play); the cause inside the lookahead is not found yet.
 [pso-ahead] statistics print with [pso-async] (used = lookahead PSOs a real draw later took: the check that the guesses
 match). cellGcmSys.c exports gcm_walker_ahead (the walker's position).
 Host test: R&C port/rc/tests/run_fifo_ahead_test.sh.
@@ -258,7 +260,7 @@ index 69497cd..23a851b 100644
 + * as the current one (same DSV and RTV formats, which the key does not hold): a miss there is submitted and left
 + * pending, so the workers build in parallel while the walker waits for the first. Nothing is drawn or skipped; a
 + * wrong guess (a draw whose layout or GPU-fetch variant comes out differently) only builds a pipeline nobody uses.
-+ * LD_PSO_AHEAD=0 = old (no lookahead). [pso-ahead] statistics print with [pso-async]. */
++ * Off by default (LD_PSO_AHEAD=1 turns it on): it hangs ToD when the pause menu opens. [pso-ahead] stats print with [pso-async]. */
 +static ID3D12PipelineState* get_pso(const rsx_vertex_layout_plan* masked_layout, int packed_payload);
 +extern int gcm_walker_ahead(int (*on_method)(void* u, u32 method, u32 arg), void* u, u32 max_words);
 +static int g_ld_ahead_active;
@@ -267,8 +269,8 @@ index 69497cd..23a851b 100644
 +static int ld_ahead_on(void)
 +{
 +    static int on = -1;
-+    if (on < 0) { const char* e = getenv("LD_PSO_AHEAD"); on = (e && *e) ? atoi(e) != 0 : 1;
-+                  fprintf(stderr, "[pso-ahead] %s (LD_PSO_AHEAD=%s)\n", on ? "on" : "off", e && *e ? e : "<unset>, default on"); }
++    if (on < 0) { const char* e = getenv("LD_PSO_AHEAD"); on = (e && *e) ? atoi(e) != 0 : 0;
++                  fprintf(stderr, "[pso-ahead] %s (LD_PSO_AHEAD=%s)\n", on ? "on" : "off", e && *e ? e : "<unset>, default off"); }
 +    return on;
 +}
 +typedef struct { rsx_dsp_surface sf; u32 draws, first_other; } ld_ahead_ctx;

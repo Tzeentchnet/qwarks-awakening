@@ -18,7 +18,9 @@
 #include "pad_mouse.h"
 #include <windows.h>
 
-extern "C" volatile unsigned long long g_rc_mouse_take_ms;   /* main.cpp: last camera update with mouse look on (stage 3 cursor rule) */
+extern "C" volatile unsigned g_rc_mouse_take_flip;   /* main.cpp: presented-frame count at the last camera update (stage 3 cursor rule) */
+extern "C" volatile int g_rc_mouse_take_any;        /* main.cpp: a camera update has run */
+extern "C" unsigned ppu_boot_frames_presented(void);
 
 static int s_tods_pitch_dy;   /* vertical counts of this update's take (func_0006D4D8 -> func_0006D548) */
 
@@ -48,7 +50,8 @@ void func_0006D4D8(ppu_context* ctx)
     LARGE_INTEGER qf, qc;
     QueryPerformanceFrequency(&qf); QueryPerformanceCounter(&qc);
     const double now = (double)qc.QuadPart / (double)qf.QuadPart;
-    g_rc_mouse_take_ms = (unsigned long long)(now * 1000.0);
+    g_rc_mouse_take_flip = ppu_boot_frames_presented();
+    g_rc_mouse_take_any = 1;
     int dx = 0, dy = 0;
     const int moved = pad_mouse_take(now, &dx, &dy);
     const float dt = tods_mouse_dt();

@@ -3,6 +3,43 @@
 All notable user-facing changes, newest first, in the style of [Keep a Changelog](https://keepachangelog.com/). The
 project is a pre-release (early work, not playable yet): see [RELEASE-CRITERIA.md](docs/RELEASE-CRITERIA.md).
 
+## [0.3.1] - 2026-11-15 (pre-release)
+
+A fix release on top of 0.3.0: *Tools of Destruction*'s pause menu opens and closes again, *All 4 One*'s first
+level is drawn in colour, the mouse pointer is a wrench, no console window opens with a game, and the launcher comes as
+a single setup file. Known issues of this release: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
+
+### [All games]
+- The mouse pointer over a game's window is a wrench (patch 7065). In 0.3.0 it was an arrow taken over from another
+  port.
+- A game no longer opens a console window beside its own: the games are now Windows programs instead of console
+  programs. The log file is written as before.
+- Fixed the decoding of one-dimensional textures (patch 7045): they were read as two-dimensional images. This made the
+  world of *All 4 One* white and *Into the Nexus*'s screen white after its post-processing pass.
+
+### [ToD] *Tools of Destruction*: in game
+- Fixed a hang when the pause menu opens, new in 0.3.0. The cause is the look-ahead that starts building the graphics
+  pipelines of upcoming draws (patch 7050); it is now off unless `LD_PSO_AHEAD=1` is set. Without it the pause menu
+  opened and closed in two scripted runs and in hand play of a development build (2026-11-13 and 2026-11-14); with it,
+  four of four scripted runs hung. The cause inside the look-ahead is not found yet. With the look-ahead off, a
+  level's first load builds its pipelines one after another again.
+- With mouse look on, the pointer is hidden and held in the window while you play and shown in menus, the pause menu
+  and cinematics. Not yet checked by hand.
+
+### [A4O] *All 4 One*: boots
+- The first level, Luminopolis, is drawn in colour (see [All games]). In hand play of a development build
+  (2026-11-14) a new game reached the first fight in Luminopolis; the characters then fell through the floor (see
+  [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)).
+
+### [Launcher]
+- A single setup file, `Qwarks-Awakening-<version>-setup-windows-x64.exe`, installs the launcher with everything a
+  build needs, per user and without administrator rights, with Start menu and desktop entries and an uninstaller that
+  asks before it removes your games and settings. The zips stay as the portable option. Checked under Proton on
+  Linux: install, install over an earlier install (your games, logs and settings stay), install into a folder whose
+  path has spaces and apostrophes, uninstall (2026-11-13 and 2026-11-14). Not tried on Windows.
+- Checksums: one `SHA256SUMS` file per release instead of a SHA-256 file for each download.
+- The launcher's release is the one marked Latest on the releases page.
+
 ## [0.3.0] - 2026-11-13 (pre-release)
 
 Since 0.2.1 the launcher builds games, *Deadlocked HD* builds and boots, every other game was run again with scripted

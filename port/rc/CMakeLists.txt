@@ -10,7 +10,7 @@ if(NOT RC_EXE)
     set(RC_EXE "${RC_GAME}")
 endif()
 project(rc_${RC_GAME}
-    VERSION 0.3.0
+    VERSION 0.3.1
     LANGUAGES C CXX
     DESCRIPTION "Recompiled PS3 game project (ps3recomp)"
 )
@@ -344,6 +344,8 @@ endif()
 # Patch 6010: the name in the player's settings folder (%APPDATA%\Qwark's Awakening) and the settings files' comments
 # (tools/release/names.py PRODUCT). PUBLIC so main.cpp's display.ini writer gets the same name.
 target_compile_definitions(ps3recomp_runtime PUBLIC "PS3RECOMP_PRODUCT_NAME=\"Qwark's Awakening\"")
+# R&C patch 7065: the menu pointer is a wrench (pad_cursor_art.h), not 2111's arrow
+target_compile_definitions(ps3recomp_runtime PRIVATE PAD_CURSOR_WRENCH)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${RC_EXE}")   # tods.exe, acit.exe
 # No online setup: added when the port has its own. The file logger (KZ3 ) is above (port/common/log).
@@ -359,6 +361,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 # anything a POSIX linker can find; the D3D12 backend's own imports come in
 # through the #pragma comment(lib) in libs/video/rsx_d3d12_backend.c.
 if(WIN32)
+    # GUI subsystem (2026-11-13 hand play: Steam started the exe and a console window opened beside the game). The
+    # entry stays main(); the log file is unchanged, and a redirected stdout (tools/proton-inner.sh run.bat) still works.
+    # Same as the Killzone 3 port (port/kz3/CMakeLists.txt).
+    if(MSVC)
+        target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
+    else()
+        target_link_options(${PROJECT_NAME} PRIVATE -mwindows)
+    endif()
     target_link_libraries(${PROJECT_NAME} PRIVATE
         dbghelp
         user32

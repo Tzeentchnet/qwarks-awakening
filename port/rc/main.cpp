@@ -491,20 +491,18 @@ static DWORD WINAPI rc_test_fault(LPVOID p)
 }
 
 /* Stage 3 cursor rule (ENHANCEMENT, only with mouse look on; adapted from Killzone 2 PC patch 6046's in-play rule): a game's
- * camera hook (ToD: port/rc/tods/tods_mouse_look.inc) stamps g_rc_mouse_take_ms (QueryPerformanceCounter ms) at each camera
- * update; while one ran within RC_MOUSE_PLAY_MS the pointer is hidden and held in the window (pad_cursor_decide with menu = 0),
- * otherwise (menus, pause, movies, loading, a game without a hook) it is shown and free (menu = 1). With mouse look off nothing
- * is called and the cursor keeps Project Helghast's default (hidden over the client area, never clipped). */
-extern "C" { volatile unsigned long long g_rc_mouse_take_ms = 0; }
+ * camera hook (ToD: port/rc/tods/tods_mouse_look.inc) stamps g_rc_mouse_take_flip (the presented-frame count) at each camera
+ * update; while one ran within RC_MOUSE_PLAY_FLIPS presented frames the pointer is hidden and held in the window
+ * (pad_cursor_decide with menu = 0), otherwise (menus, pause, movies, a game without a hook) it is shown and free (menu = 1).
+ * The frame clock, not wall time, so a frame hitch keeps the state (rc_mouse.h). With mouse look off nothing is called and the
+ * cursor keeps Project Helghast's default (hidden over the client area, never clipped). */
+extern "C" { volatile unsigned g_rc_mouse_take_flip = 0; volatile int g_rc_mouse_take_any = 0; }
 static void rc_mouse_cursor_tick(void)
 {
     static int on = -1;
     if (on < 0) on = pad_mouse_enabled();
     if (!on) return;
-    LARGE_INTEGER qf, qc;
-    QueryPerformanceFrequency(&qf); QueryPerformanceCounter(&qc);
-    const unsigned long long now_ms = (unsigned long long)((double)qc.QuadPart * 1000.0 / (double)qf.QuadPart);
-    pad_mouse_menu_set(!rc_mouse_in_play(now_ms, g_rc_mouse_take_ms));
+    pad_mouse_menu_set(!rc_mouse_in_play((unsigned)g_frames_presented, g_rc_mouse_take_flip, g_rc_mouse_take_any));
 }
 
 static void present_guest_frame(void)
