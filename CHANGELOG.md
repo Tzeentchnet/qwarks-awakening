@@ -3,6 +3,15 @@
 All notable user-facing changes, newest first, in the style of [Keep a Changelog](https://keepachangelog.com/). The
 project is a pre-release (early work, not playable yet): see [RELEASE-CRITERIA.md](docs/RELEASE-CRITERIA.md).
 
+## [Unreleased]
+
+### [All games]
+- Unchanged draws reuse the previous vertex constant-buffer block instead of copying 8 KiB again (patch 2148,
+  `cb_reuse = 1` in `settings.ini`; set it to `0` for the old path). A focused host test compares every byte read with
+  reuse off and on over 30,000 synthetic draws and rejects a deliberately broken cache. In one captured *Tools of
+  Destruction* frame, 3,124 of 6,964 draws had unchanged constants; the frame-rate change has not yet been measured in
+  a game run.
+
 ## [0.3.1] - 2026-11-16 (pre-release)
 
 A fix release on top of 0.3.0: *Tools of Destruction*'s pause menu opens and closes again, *All 4 One*'s first
@@ -247,4 +256,3 @@ per second, in every game's line.
 - A DualShock 4 pad (through SDL3), Alt+Enter fullscreen and in-game saving work under Proton.
 - The PPU code of *A Crack in Time* and *Into the Nexus* is lifted with the same tools; neither game is linked or
   running yet.
-
