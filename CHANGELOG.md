@@ -3,7 +3,7 @@
 All notable user-facing changes, newest first, in the style of [Keep a Changelog](https://keepachangelog.com/). The
 project is a pre-release (early work, not playable yet): see [RELEASE-CRITERIA.md](docs/RELEASE-CRITERIA.md).
 
-## [0.3.1] - 2026-11-15 (pre-release)
+## [0.3.1] - 2026-11-16 (pre-release)
 
 A fix release on top of 0.3.0: *Tools of Destruction*'s pause menu opens and closes again, *All 4 One*'s first
 level is drawn in colour, the mouse pointer is a wrench, no console window opens with a game, and the launcher comes as
